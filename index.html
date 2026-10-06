@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BiblioTech - Gerenciamento de Biblioteca</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-64 bg-slate-900 text-slate-300 flex flex-col flex-shrink-0 transition-all duration-300 z-30">
+        <!-- Brand Header -->
+        <div class="h-16 flex items-center justify-between px-6 bg-slate-950/40 border-b border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-blue-600 text-white rounded-lg">
+                    <i data-lucide="book-open" class="w-5 h-5"></i>
+                </div>
+                <span class="font-bold text-lg text-white tracking-wide">BiblioTech</span>
+            </div>
+            <button id="closeSidebarMobile" class="md:hidden text-slate-400 hover:text-white">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors text-white bg-blue-600/90 hover:bg-blue-600">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                <span>Dashboard</span>
+            </button>
+
+            <button onclick="switchTab('livros')" id="nav-livros" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors hover:text-white hover:bg-slate-800">
+                <i data-lucide="book" class="w-4 h-4"></i>
+                <span>Livros</span>
+            </button>
+
+            <button onclick="switchTab('usuarios')" id="nav-usuarios" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors hover:text-white hover:bg-slate-800">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                <span>Usuários</span>
+            </button>
+
+            <button onclick="switchTab('emprestimos')" id="nav-emprestimos" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors hover:text-white hover:bg-slate-800">
+                <i data-lucide="repeat" class="w-4 h-4"></i>
+                <span>Empréstimos</span>
+            </button>
+        </nav>
+
+        <!-- User Profile Footer -->
+        <div class="p-4 border-t border-slate-800 bg-slate-950/20 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-white font-semibold text-sm border border-slate-600">
+                AD
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-white truncate">Bibliotecário Admin</p>
+                <p class="text-xs text-slate-400 truncate">admin@bibliotech.com</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        
+        <!-- Top Navbar -->
+        <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shadow-sm z-10">
+            <div class="flex items-center gap-4">
+                <button id="toggleSidebar" class="p-2 text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100 focus:outline-none">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                <h1 id="pageTitle" class="text-xl font-bold text-slate-800">Dashboard</h1>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span id="currentDate" class="text-xs md:text-sm text-slate-500 font-medium hidden sm:inline-block"></span>
+                <button onclick="resetDataModal()" class="px-3 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-lg transition-colors flex items-center gap-1.5" title="Restaurar dados iniciais">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Resetar Dados</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Toast Notification Box -->
+        <div id="toast" class="fixed top-20 right-6 z-50 transform translate-x-full transition-transform duration-300 ease-in-out bg-slate-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center gap-3 text-sm border-l-4 border-emerald-500">
+            <i id="toastIcon" data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>
+            <span id="toastMsg">Operação realizada com sucesso!</span>
+        </div>
+
+        <!-- Main Workspace -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50">
+            
+            <!-- TAB 1: DASHBOARD -->
+            <section id="tab-dashboard" class="tab-content fade-in space-y-6">
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total de Livros</p>
+                            <h3 id="statTotalLivros" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+                        </div>
+                        <div class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                            <i data-lucide="book" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Usuários Registrados</p>
+                            <h3 id="statTotalUsuarios" class="text-2xl font-bold text-slate-800 mt-1">0</h3>
+                        </div>
+                        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                            <i data-lucide="users" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Empréstimos Ativos</p>
+                            <h3 id="statEmprestimosAtivos" class="text-2xl font-bold text-amber-600 mt-1">0</h3>
+                        </div>
+                        <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                            <i data-lucide="clock" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Devolvidos</p>
+                            <h3 id="statEmprestimosDevolvidos" class="text-2xl font-bold text-emerald-600 mt-1">0</h3>
+                        </div>
+                        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                            <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Section -->
+                <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-base font-semibold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="history" class="w-5 h-5 text-blue-600"></i> Empréstimos Recentes
+                        </h2>
+                        <button onclick="switchTab('emprestimos')" class="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline">Ver Todos &rarr;</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-xs font-semibold text-slate-500 border-b border-slate-200 uppercase bg-slate-50/50">
+                                    <th class="py-3 px-4">Livro</th>
+                                    <th class="py-3 px-4">Usuário</th>
+                                    <th class="py-3 px-4">Data Empréstimo</th>
+                                    <th class="py-3 px-4">Data Devolução</th>
+                                    <th class="py-3 px-4 text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboardRecentTable" class="text-sm divide-y divide-slate-100">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: CADASTRO DE LIVROS -->
+            <section id="tab-livros" class="tab-content hidden fade-in space-y-6">
+                <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs p-6">
+                    <h2 class="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-5 h-5 text-blue-600"></i> Cadastrar Novo Livro
+                    </h2>
+                    <form id="formLivro" onsubmit="handleCadastrarLivro(event)" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Título do Livro *</label>
+                            <input type="text" id="livroTitulo" required placeholder="Ex: Dom Casmurro" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Autor *</label>
+                            <input type="text" id="livroAutor" required placeholder="Ex: Machado de Assis" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">ISBN *</label>
+                            <input type="text" id="livroIsbn" required placeholder="Ex: 978-8535902778" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Categoria *</label>
+                            <select id="livroCategoria" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white">
+                                <option value="">Selecione...</option>
+                                <option value="Romance">Romance</option>
+                                <option value="Ficção Científica">Ficção Científica</option>
+                                <option value="Fantasia">Fantasia</option>
+                                <option value="História">História</option>
+                                <option value="Tecnologia">Tecnologia</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Ano de Publicação</label>
+                            <input type="number" id="livroAno" placeholder="Ex: 1899" min="1000" max="2099" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Quantidade de Exemplares *</label>
+                            <input type="number" id="livroExemplares" required min="1" value="1" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div class="md:col-span-2 lg:col-span-3 flex justify-end mt-2">
+                            <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i> Salvar Livro
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs p-6 space-y-4">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                        <h3 class="text-base font-semibold text-slate-800">Livros Cadastrados</h3>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <div class="relative">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                                <input type="text" id="searchLivro" oninput="renderLivrosTable()" placeholder="Buscar por título, autor, ISBN..." class="pl-9 pr-4 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-full sm:w-64">
+                            </div>
+                            <select id="filterCategoria" onchange="renderLivrosTable()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white">
+                                <option value="">Todas as Categorias</option>
+                                <option value="Romance">Romance</option>
+                                <option value="Ficção Científica">Ficção Científica</option>
+                                <option value="Fantasia">Fantasia</option>
+                                <option value="História">História</option>
+                                <option value="Tecnologia">Tecnologia</option>
+                                <option value="Outros">Outros</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-xs font-semibold text-slate-500 border-b border-slate-200 uppercase bg-slate-50/50">
+                                    <th class="py-3 px-4">Título</th>
+                                    <th class="py-3 px-4">Autor</th>
+                                    <th class="py-3 px-4">ISBN</th>
+                                    <th class="py-3 px-4">Categoria</th>
+                                    <th class="py-3 px-4">Ano</th>
+                                    <th class="py-3 px-4 text-center">Exemplares</th>
+                                    <th class="py-3 px-4 text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="livrosTableBody" class="text-sm divide-y divide-slate-100">
+                                <!-- Dynamic Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: CADASTRO DE USUÁRIOS -->
+            <section id="tab-usuarios" class="tab-content hidden fade-in space-y-6">
+                <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs p-6">
+                    <h2 class="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="user-plus" class="w-5 h-5 text-blue-600"></i> Cadastrar Novo Usuário
+                    </h2>
+                    <form id="formUsuario" onsubmit="handleCadastrarUsuario(event)" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Nome Completo *</label>
+                            <input type="text" id="usrNome" required placeholder="Ex: Ana Silva" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">CPF / Matrícula *</label>
+                            <input type="text" id="usrDoc" required placeholder="Ex: 000.111.222-33" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">E-mail *</label>
+                            <input type="email" id="usrEmail" required placeholder="Ex: ana@email.com" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Telefone</label>
+                            <input type="tel" id="usrTelefone" placeholder="Ex: (11) 98765-4321" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Tipo de Usuário *</label>
+                            <select id="usrTipo" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white">
+                                <option value="Aluno">Aluno</option>
+                                <option value="Professor">Professor</option>
+                                <option value="Leitor Geral">Leitor Geral</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2 lg:col-span-3 flex justify-end mt-2">
+                            <button type="submit" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition-colors flex items-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i> Salvar Usuário
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs p-6 space-y-4">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                        <h3 class="text-base font-semibold text-slate-800">Usuários Cadastrados</h3>
+                        <div class="relative">
+                            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                            <input type="text" id="searchUsuario" oninput="renderUsuariosTable()" placeholder="Buscar nome, CPF, e-mail..." class="pl-9 pr-4 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-full sm:w-64">
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-xs font-semibold text-slate-500 border-b border-slate-200 uppercase bg-slate-50/50">
+                                    <th class="py-3 px-4">Nome</th>
+                                    <th class="py-3 px-4">CPF / Matrícula</th>
+                                    <th class="py-3 px-4">E-mail</th>
+                                    <th class="py-3 px-4">Telefone</th>
+                                    <th class="py-3 px-4">Tipo</th>
+                                    <th class="py-3 px-4 text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usuariosTableBody" class="text-sm divide-y divide-slate-100">
+                                <!-- Dynamic Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: REGISTRO DE EMPRÉSTIMOS -->
+            <section id="tab-emprestimos" class="tab-content hidden fade-in space-y-6">
+                <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs p-6">
+                    <h2 class="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                        <i data-lucide="book-up" class="w-5 h-5 text-blue-600"></i> Registrar Novo Empréstimo
+                    </h2>
+                    <form id="formEmprestimo" onsubmit="handleCadastrarEmprestimo(event)" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="lg:col-span-2">
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Livro *</label>
+                            <select id="empLivroSelect" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white">
+                                <option value="">Selecione um livro...</option>
+                            </select>
+                        </div>
+                        <div class="lg:col-span-2">
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Usuário *</label>
+                            <select id="empUsuarioSelect" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white">
+                                <option value="">Selecione um usuário...</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Data do Empréstimo *</label>
+                            <input type="date" id="empDataEmprestimo" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Data Prevista de Devolução *</label>
+                            <input type="date" id="empDataDevolucao" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all">
+                        </div>
+                        <div class="lg:col-span-2 flex items-end justify-end">
+                            <button type="submit" class="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2">
+                                <i data-lucide="check" class="w-4 h-4"></i> Finalizar Empréstimo
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white rounded-xl border border-slate-200/80 shadow-xs p-6 space-y-4">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+                        <h3 class="text-base font-semibold text-slate-800">Histórico de Empréstimos</h3>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <div class="relative">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                                <input type="text" id="searchEmprestimo" oninput="renderEmprestimosTable()" placeholder="Buscar livro, autor, usuário..." class="pl-9 pr-4 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 w-full sm:w-64">
+                            </div>
+                            <select id="filterStatus" onchange="renderEmprestimosTable()" class="px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white">
+                                <option value="">Todos os Status</option>
+                                <option value="Em Aberto">Em Aberto</option>
+                                <option value="Devolvido">Devolvido</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-xs font-semibold text-slate-500 border-b border-slate-200 uppercase bg-slate-50/50">
+                                    <th class="py-3 px-4">Título do Livro</th>
+                                    <th class="py-3 px-4">Autor</th>
+                                    <th class="py-3 px-4">Usuário</th>
+                                    <th class="py-3 px-4">Data Empréstimo</th>
+                                    <th class="py-3 px-4">Data Devolução</th>
+                                    <th class="py-3 px-4 text-center">Status</th>
+                                    <th class="py-3 px-4 text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="emprestimosTableBody" class="text-sm divide-y divide-slate-100">
+                                <!-- Dynamic Content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Application Script -->
+    <script src="app.js"></script>
+</body>
+</html>
